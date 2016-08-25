@@ -1,0 +1,5 @@
+// read before running server (shell script???)
+// set constants here
+// set IP addresses here (flask server, database server, memcache server???)
+// database name
+// login, password

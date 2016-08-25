@@ -13,7 +13,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
 # FIXME: more about caching: http://flask.pocoo.org/docs/0.11/patterns/caching/
-# TODO: Think how to add caching without Flask-Cache tool
 cache = MemcachedCache()
 app = Flask(__name__)
 
@@ -29,6 +28,7 @@ def connect_db():
 
 
 def verify_id(_id=int):
+    # remove after setting auto increment in database
     if not 1 <= _id <= 2147483647:
         logger.exception('Ticket number {0} is out of bound'.format(_id))
         raise ValueError()
@@ -137,8 +137,13 @@ def get_ticket(ticket_id=int):
     cur = conn.cursor()
     try:
         if verify_id(ticket_id):
-            cur.execute('SELECT * FROM tickets WHERE ticket_id='.format(ticket_id))
-        return cur.fetchone()
+            if cache.get(ticket_id):
+                return cache.get(ticket_id)
+            else:
+                cur.execute('SELECT * FROM tickets WHERE ticket_id='.format(ticket_id))
+                if cur.fetchone():
+                    cache.set(ticket_id, cur.fetchone(), timeout=5*30)
+                    return cur.fetchone()
     except IOError:
         logger.exception('Error getting ticket')
     return None
