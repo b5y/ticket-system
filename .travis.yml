@@ -1,0 +1,16 @@
+language: python
+install:
+  - pip install flask
+  - pip install psycopg2
+  - pip install uwsgi
+  - pip install pylibmc
+  - pip install dnspyhton
+  - python setup.py install
+python:
+  - "2.7"
+script:
+  - py.test test_ticket_system.py
+
+notifications:
+  email:
+    - mehty.musaev@gmail.com
