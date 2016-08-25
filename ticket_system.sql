@@ -1,6 +1,6 @@
 /* CREATE EXTENSION citext; */
 
-
+/* set autoincrement for every query* /
 CREATE TABLE IF NOT EXISTS tickets
 (
   ticket_id SERIAL NOT NULL,

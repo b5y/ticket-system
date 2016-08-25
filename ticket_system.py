@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
 # FIXME: more about caching: http://flask.pocoo.org/docs/0.11/patterns/caching/
 # TODO: Think how to add caching without Flask-Cache tool
-# cache = MemcachedCache()
+cache = MemcachedCache()
 app = Flask(__name__)
 
 
@@ -54,8 +54,10 @@ def verify_email_address(email=basestring):
 def create_ticket(ticket_id=int, subject=basestring, text=basestring,
                   email=basestring, state=basestring):
     conn = connect_db()
-    cur = conn.cursor()
     date_time = datetime.datetime
+    if not conn:
+        return False
+    cur = conn.cursor()
     try:
         if verify_id(ticket_id) and verify_email_address(email):
             cur.execute('INSERT INTO tickets('
@@ -74,6 +76,8 @@ def create_ticket(ticket_id=int, subject=basestring, text=basestring,
                                 text,
                                 email,
                                 state))
+            if cur.fetchone():
+                cache.set(ticket_id, cur.fetchone(), timeout=5*30)
         return True
     except IOError:
         logger.exception('Error creating ticket {0} with email address {1}'
@@ -84,6 +88,8 @@ def create_ticket(ticket_id=int, subject=basestring, text=basestring,
 @app.route('/')
 def change_state(ticket_id=int, new_state=basestring):
     conn = connect_db()
+    if not conn:
+        return False
     cur = conn.cursor()
     date_time = datetime.datetime
     try:
@@ -91,6 +97,8 @@ def change_state(ticket_id=int, new_state=basestring):
             cur.execute('UPDATE tickets'
                         'SET state={0}, change_date={1} WHERE ticket_id={2};'
                         .format(new_state, date_time, ticket_id))
+            if cur.fetchone():
+                cache.set(ticket_id, cur.fetchone(), timeout=5*30)
         return True
     except IOError:
         logger.exception('Error changing state')
@@ -101,6 +109,8 @@ def change_state(ticket_id=int, new_state=basestring):
 def add_comment(comment_id=int, ticket_id=int, create_date=basestring,
                 email=basestring, text=basestring):
     conn = connect_db()
+    if not conn:
+        return False
     cur = conn.cursor()
     try:
         if (verify_id(comment_id) and verify_id(ticket_id) and
@@ -122,6 +132,8 @@ def add_comment(comment_id=int, ticket_id=int, create_date=basestring,
 @app.route('/')
 def get_ticket(ticket_id=int):
     conn = connect_db()
+    if not conn:
+        return None
     cur = conn.cursor()
     try:
         if verify_id(ticket_id):
