@@ -8,7 +8,7 @@ WARNING: THIS PROJECT IS UNDER DEVELOPMENT!!!
 
 -- implement tests
 
--- add memcache
+-- add memcache | **done**
 
 -- configure database | **done**
 
