@@ -9,7 +9,6 @@ setup(
         'psycopg2 >= 2.6.2',
         'uwsgi >= 2.0.13.1',
         'pylibmc >= 1.5.1',
-        'dnspyhton >= 1.14.0',
     ],
     setup_requires=[
         'pytest-runner',
