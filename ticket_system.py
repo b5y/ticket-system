@@ -76,7 +76,7 @@ def create_ticket(ticket_id=int, subject=basestring, text=basestring,
                                 state))
             if cur.fetchone():
                 cache.set(ticket_id, cur.fetchone(), timeout=5*30)
-        return True
+            return True
     except IOError:
         logger.exception('Error creating ticket {0} with email address {1}'
                          .format(ticket_id, email))
@@ -97,7 +97,7 @@ def change_state(ticket_id=int, new_state=basestring):
                         .format(new_state, date_time, ticket_id))
             if cur.fetchone():
                 cache.set(ticket_id, cur.fetchone(), timeout=5*30)
-        return True
+            return True
     except IOError:
         logger.exception('Error changing state')
     return False
@@ -121,7 +121,7 @@ def add_comment(comment_id=int, ticket_id=int, create_date=basestring,
                         'text)'
                         'VALUES ({0}, {1}, {2}, {3}, {4})'
                         .format(comment_id, ticket_id, create_date, email, text))
-        return True
+            return True
     except IOError:
         logger.exception('Error add comment')
     return False
