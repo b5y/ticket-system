@@ -1,27 +1,23 @@
-/* CREATE EXTENSION citext; */
-/* read before running server */
-/* set autoincrement for every query* /
-
+-- read before running server
 
 CREATE TABLE IF NOT EXISTS tickets
 (
-  ticket_id SERIAL NOT NULL,
-  create_date TIMESTAMP,
-  change_date TIMESTAMP,
-  subject TEXT,
-  text TEXT,
-  email citext UNIQUE,
-  state TEXT,
-  FOREIGN KEY (ticket_id) REFERENCES Comments(ticket_id)
+  id          INTEGER PRIMARY KEY,
+  create_date DATE,
+  change_date DATE,
+  subject     TEXT,
+  text        TEXT,
+  email       TEXT UNIQUE,
+  state       TEXT
 );
 
 
 CREATE TABLE IF NOT EXISTS comments
 (
-  comment_id SERIAL NOT NULL,
-  ticket_id SERIAL NOT NULL,
-  create_date TIMESTAMP,
-  email citext UNIQUE,
-  text TEXT,
-  FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
+  id          INTEGER PRIMARY KEY,
+  ticket_id   INTEGER NOT NULL,
+  create_date DATE,
+  email       TEXT UNIQUE,
+  text        TEXT,
+  FOREIGN KEY (ticket_id) REFERENCES tickets (id)
 );
