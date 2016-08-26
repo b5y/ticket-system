@@ -37,12 +37,7 @@ def verify_email_address(email=basestring):
     pattern = re.compile(
         ur'^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|([-a-z0-9!#$%&@\s\'*+/=?^_`{|}~]|(?<!\.)\.)*)(?<!\.)@[a-z0-9][\w\.-]*[a-z0-9]\.[a-z][a-z\.]*[a-z]$')
     if re.search(pattern, email):
-        domain = email.rsplit('@', 1)[-1]
-        try:
-            dns.resolver.query(domain, 'MX')
-            return True
-        except dns.exception.DNSException:
-            logger.exception('Domain name of {0} email is invalid'.format(email))
+        return True
     else:
         logger.exception('Email address {0} is invalid'.format(email))
         raise ValueError()
