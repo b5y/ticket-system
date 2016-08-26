@@ -12,7 +12,6 @@ from email.utils import parseaddr
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
-# FIXME: more about caching: http://flask.pocoo.org/docs/0.11/patterns/caching/
 cache = MemcachedCache()
 app = Flask(__name__)
 
@@ -36,7 +35,6 @@ def verify_id(_id=int):
 
 
 def verify_email_address(email=basestring):
-    # FIXME: add checking with regex
     if '@' in parseaddr(email)[1]:
         domain = email.rsplit('@', 1)[-1]
         try:
