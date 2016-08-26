@@ -10,7 +10,7 @@ WARNING: THIS PROJECT IS UNDER DEVELOPMENT!!!
 
 -- add memcache
 
--- configure database
+-- configure database | **done**
 
 -- think about SQL-injection
 
