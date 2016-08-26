@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
 import psycopg2
 import logging
-import dns
 import datetime
 from flask import Flask
 from werkzeug.contrib.cache import MemcachedCache
-from email.utils import parseaddr
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -35,7 +34,9 @@ def verify_id(_id=int):
 
 
 def verify_email_address(email=basestring):
-    if '@' in parseaddr(email)[1]:
+    pattern = re.compile(
+        ur'^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|([-a-z0-9!#$%&@\s\'*+/=?^_`{|}~]|(?<!\.)\.)*)(?<!\.)@[a-z0-9][\w\.-]*[a-z0-9]\.[a-z][a-z\.]*[a-z]$')
+    if re.search(pattern, email):
         domain = email.rsplit('@', 1)[-1]
         try:
             dns.resolver.query(domain, 'MX')
@@ -75,7 +76,7 @@ def create_ticket(ticket_id=int, subject=basestring, text=basestring,
                                 email,
                                 state))
             if cur.fetchone():
-                cache.set(ticket_id, cur.fetchone(), timeout=5*30)
+                cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
             return True
     except IOError:
         logger.exception('Error creating ticket {0} with email address {1}'
@@ -96,7 +97,7 @@ def change_state(ticket_id=int, new_state=basestring):
                         'SET state={0}, change_date={1} WHERE ticket_id={2};'
                         .format(new_state, date_time, ticket_id))
             if cur.fetchone():
-                cache.set(ticket_id, cur.fetchone(), timeout=5*30)
+                cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
             return True
     except IOError:
         logger.exception('Error changing state')
@@ -140,7 +141,7 @@ def get_ticket(ticket_id=int):
             else:
                 cur.execute('SELECT * FROM tickets WHERE ticket_id='.format(ticket_id))
                 if cur.fetchone():
-                    cache.set(ticket_id, cur.fetchone(), timeout=5*30)
+                    cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
                     return cur.fetchone()
     except IOError:
         logger.exception('Error getting ticket')
