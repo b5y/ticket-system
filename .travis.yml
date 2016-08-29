@@ -1,20 +1,22 @@
 language: python
-services:
-  - postgresql
 python:
-  - 2.7.12
+  - "2.7.12"
+addons:
+  postgresql: "9.4"
 env:
   - FLASK=0.11.1
   - FLASK=0.10.1
   - FLASK=0.9
 install:
-  - pip install -q Flask==$FLASK
-  - pip install -q -r requirements.txt
-  - pip install -q -e .
+  - pip install Flask==$FLASK
+  - pip install -r requirements.txt
+  - pip install -e .
 before_script:
   - psql -c 'create database ticket_system;' -U postgres
-  - psql -d ticket_system -a -f ticket_system.sql
-  # - psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'ticket_system'" | grep -q 1 || psql -U postgres -c "CREATE DATABASE ticket_system"
+  - export PGPASSWORD="postgres"
+  - psql -f schema.sql -U postgres -d ticket_system
+  # From docs: http://uwsgi-docs.readthedocs.io/en/latest/WSGIquickstart.html#deploying-flask
+  - uwsgi --socket 127.0.0.1:3031 --wsgi-file wsgi.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
 script:
   - py.test test_ticket_system.py
 
