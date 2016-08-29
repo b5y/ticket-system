@@ -33,7 +33,7 @@ def verify_email_address(email=basestring):
         raise ValueError('Email address {0} is invalid'.format(email))
 
 
-@app.route('/')
+@app.route('/ticket/create', methods=['POST'])
 def create_ticket(subject=basestring, text=basestring,
                   email=basestring, state=basestring):
     conn = connect_db()
@@ -67,7 +67,7 @@ def create_ticket(subject=basestring, text=basestring,
     return False
 
 
-@app.route('/')
+@app.route('/ticket/<int:ticket_id>', methods=['PUT'])
 def change_state(ticket_id=int, new_state=basestring):
     conn = connect_db()
     if not conn:
@@ -86,7 +86,7 @@ def change_state(ticket_id=int, new_state=basestring):
     return False
 
 
-@app.route('/')
+@app.route('/comment/add', methods=['POST'])
 def add_comment(ticket_id=int, create_date=basestring,
                 email=basestring, text=basestring):
     conn = connect_db()
@@ -110,7 +110,7 @@ def add_comment(ticket_id=int, create_date=basestring,
     return False
 
 
-@app.route('/')
+@app.route('/ticket/<int:ticket_id>', methods=['GET'])
 def get_ticket(ticket_id=int):
     conn = connect_db()
     if not conn:
