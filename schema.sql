@@ -1,8 +1,10 @@
 -- read before running server
 
+DROP TABLE IF EXISTS tickets;
+
 CREATE TABLE IF NOT EXISTS tickets
 (
-  id          INTEGER PRIMARY KEY,
+  id          SERIAL PRIMARY KEY,
   create_date DATE,
   change_date DATE,
   subject     TEXT,
@@ -12,9 +14,11 @@ CREATE TABLE IF NOT EXISTS tickets
 );
 
 
+DROP TABLE IF EXISTS comments;
+
 CREATE TABLE IF NOT EXISTS comments
 (
-  id          INTEGER PRIMARY KEY,
+  id          SERIAL PRIMARY KEY,
   ticket_id   INTEGER NOT NULL,
   create_date DATE,
   email       TEXT UNIQUE,
