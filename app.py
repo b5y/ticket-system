@@ -5,13 +5,13 @@ import re
 import psycopg2
 import logging
 import datetime
+import pylibmc
 from flask import Flask
-from werkzeug.contrib.cache import MemcachedCache
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
-cache = MemcachedCache()
+cache = pylibmc.Client(["127.0.0.1"], binary=True, behaviors={"tcp_nodelay": True, "ketama": True})
 app = Flask(__name__)
 
 
@@ -45,22 +45,16 @@ def create_ticket(subject=basestring, text=basestring,
     cur = conn.cursor()
     if verify_email_address(email):
         try:
-            ticket_id = cur.execute('INSERT INTO tickets('
-                                    'create_date,'
-                                    'change_date,'
-                                    'subject,'
-                                    'text,'
-                                    'email,'
-                                    'state)'
-                                    'VALUES (%s, %s, %s, %s, %s, %s) '
-                                    'RETURNING id;'
-                                    , (date_time,
-                                       date_time,
-                                       subject,
-                                       text,
-                                       email,
-                                       state))
-            if cur.fetchone()[0]:
+            cur.execute(
+                "INSERT INTO tickets(create_date, change_date, subject, text, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;"
+                , (date_time,
+                   date_time,
+                   subject,
+                   text,
+                   email,
+                   state))
+            ticket_id = cur.fetchone()[0]
+            if ticket_id:
                 cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
             return True
         except IOError as io_e:
@@ -78,11 +72,9 @@ def change_state(ticket_id=int, new_state=basestring):
     if not conn:
         return False
     cur = conn.cursor()
-    date_time = datetime.datetime
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        cur.execute('UPDATE tickets'
-                    'SET state=(%s), change_date=(%s) WHERE ticket_id=(%s);'
-                    , (new_state, date_time, ticket_id))
+        cur.execute("UPDATE tickets SET state=(%s), change_date=(%s) WHERE id=(%s);", (new_state, date_time, ticket_id))
         if cur.fetchone():
             cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
         return True
@@ -95,20 +87,15 @@ def change_state(ticket_id=int, new_state=basestring):
 
 
 @app.route('/comment/add', methods=['POST'])
-def add_comment(ticket_id=int, create_date=basestring,
-                email=basestring, text=basestring):
+def add_comment(ticket_id=int, email=basestring, text=basestring):
     conn = connect_db()
     if not conn:
         return False
     cur = conn.cursor()
+    create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if verify_email_address(email):
         try:
-            cur.execute('INSERT INTO comments('
-                        'ticket_id,'
-                        'create_date,'
-                        'email,'
-                        'text)'
-                        'VALUES (%s, %s, %s, %s);'
+            cur.execute("INSERT INTO comments(ticket_id, create_date, email, text) VALUES (%s, %s, %s, %s);"
                         , (ticket_id, create_date, email, text))
             return True
         except IOError:
@@ -131,7 +118,7 @@ def get_ticket(ticket_id=int):
         return cache.get(ticket_id)
     else:
         try:
-            cur.execute('SELECT * FROM tickets WHERE ticket_id=(%s);', (ticket_id))
+            cur.execute('SELECT * FROM tickets WHERE id=(%s);', ticket_id)
             if cur.fetchone():
                 cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
                 return cur.fetchone()
