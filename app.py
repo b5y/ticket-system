@@ -50,7 +50,7 @@ def create_ticket(subject=basestring, text=basestring,
     if verify_email_address(email):
         try:
             cur.execute(
-                "INSERT INTO tickets(create_date, change_date, subject, text, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;"
+                "INSERT INTO tickets(create_date, change_date, subject, text, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;"
                 , (date_time,
                    date_time,
                    subject,
