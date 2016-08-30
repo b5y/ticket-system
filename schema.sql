@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS tickets CASCADE;
 CREATE TABLE IF NOT EXISTS tickets
 (
   id          SERIAL PRIMARY KEY,
-  create_date DATE,
-  change_date DATE,
+  create_date TIMESTAMP,
+  change_date TIMESTAMP,
   subject     TEXT,
   text        TEXT,
   email       VARCHAR(254),
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS comments
 (
   id          SERIAL PRIMARY KEY,
   ticket_id   SERIAL,
-  create_date DATE,
+  create_date TIMESTAMP,
   email       VARCHAR(254),
   text        TEXT,
   FOREIGN KEY (ticket_id) REFERENCES tickets (id)
