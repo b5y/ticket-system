@@ -14,13 +14,12 @@ class TestTicketSystem(unittest.TestCase):
         assert verify_email_address('example@example.com') is True
 
     def test_create_ticket(self):
-        # new_ticket = create_ticket(subject='functionality',
-        #                            text='add new functionality',
-        #                            email='example@example.ru',
-        #                            state='In Progress')
-        #
-        # assert new_ticket is True
-        pass
+        new_ticket = create_ticket(subject='functionality',
+                                   text='add new functionality',
+                                   email='example@example.ru',
+                                   state='In Progress')
+
+        assert new_ticket is True
 
     def test_change_state(self):
         # new_state = change_state(ticket_id=3, new_state='Done')
