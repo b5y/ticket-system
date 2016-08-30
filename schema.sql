@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tickets
   change_date DATE,
   subject     TEXT,
   text        TEXT,
-  email       TEXT UNIQUE,
+  email       VARCHAR(254),
   state       TEXT
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS comments
   id          SERIAL PRIMARY KEY,
   ticket_id   INTEGER NOT NULL,
   create_date DATE,
-  email       TEXT UNIQUE,
+  email       VARCHAR(254),
   text        TEXT,
   FOREIGN KEY (ticket_id) REFERENCES tickets (id)
 );
