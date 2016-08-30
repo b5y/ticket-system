@@ -1,7 +1,8 @@
 import os
 import unittest
 import psycopg2
-from app import app, connect_db, create_ticket, change_state, add_comment, get_ticket
+from app import app, connect_db, verify_email_address, create_ticket, \
+    change_state, add_comment, get_ticket
 
 
 class TestTicketSystem(unittest.TestCase):
@@ -10,6 +11,9 @@ class TestTicketSystem(unittest.TestCase):
 
     def test_connect_db(self):
         assert connect_db() is not None
+
+    def test_verify_email_address(self):
+        assert verify_email_address('example@example.com') is True
 
     def test_create_ticket(self):
         pass
