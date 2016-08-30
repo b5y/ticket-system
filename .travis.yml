@@ -15,8 +15,6 @@ before_script:
   - psql -c 'create database ticket_system;' -U postgres
   - export PGPASSWORD="postgres"
   - psql -f schema.sql -U postgres -d ticket_system
-  # From docs: http://uwsgi-docs.readthedocs.io/en/latest/WSGIquickstart.html#deploying-flask
-  - uwsgi --socket 127.0.0.1:3031 --wsgi-file wsgi.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
 script:
   - py.test test_ticket_system.py
 
