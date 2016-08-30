@@ -10,6 +10,9 @@ pip install -e .
 psql -c 'create database ticket_system;' -U postgres
 export PGPASSWORD="postgres"
 psql -f schema.sql -U postgres -d ticket_system
+sudo apt-get install memcached
+sudo apt-get install libmemcached-dev
+memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
 py.test test_ticket_system.py
 
 # Run server with application:
