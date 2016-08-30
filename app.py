@@ -17,10 +17,12 @@ app = Flask(__name__)
 
 def connect_db():
     try:
-        return psycopg2.connect(database=DB_NAME,
+        conn = psycopg2.connect(database=DB_NAME,
                                 user='postgres',
                                 password='postgres',
                                 host='localhost')
+        conn.autocommit = True
+        return conn
     except TypeError as t_e:
         logger.exception("Cannot connect to the {0} database".format(DB_NAME), t_e)
 
@@ -37,7 +39,7 @@ def verify_email_address(email=basestring):
 def create_ticket(subject=basestring, text=basestring,
                   email=basestring, state=basestring):
     conn = connect_db()
-    date_time = datetime.datetime
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if not conn:
         return False
     cur = conn.cursor()
@@ -50,20 +52,23 @@ def create_ticket(subject=basestring, text=basestring,
                                     'text,'
                                     'email,'
                                     'state)'
-                                    'VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}) '
+                                    'VALUES (%s, %s, %s, %s, %s, %s) '
                                     'RETURNING id;'
-                                    .format(date_time,
-                                            date_time,
-                                            subject,
-                                            text,
-                                            email,
-                                            state))
-            if cur.fetchone():
+                                    , (date_time,
+                                       date_time,
+                                       subject,
+                                       text,
+                                       email,
+                                       state))
+            if cur.fetchone()[0]:
                 cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
             return True
         except IOError as io_e:
             logger.exception('Error creating new data with email address {0}'
                              .format(email), io_e)
+        finally:
+            if conn:
+                conn.close()
     return False
 
 
@@ -76,13 +81,16 @@ def change_state(ticket_id=int, new_state=basestring):
     date_time = datetime.datetime
     try:
         cur.execute('UPDATE tickets'
-                    'SET state={0}, change_date={1} WHERE ticket_id={2};'
-                    .format(new_state, date_time, ticket_id))
+                    'SET state=(%s), change_date=(%s) WHERE ticket_id=(%s);'
+                    , (new_state, date_time, ticket_id))
         if cur.fetchone():
             cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
         return True
     except IOError:
         logger.exception('Error changing state')
+    finally:
+        if conn:
+            conn.close()
     return False
 
 
@@ -100,11 +108,14 @@ def add_comment(ticket_id=int, create_date=basestring,
                         'create_date,'
                         'email,'
                         'text)'
-                        'VALUES ({0}, {1}, {2}, {3}, {4});'
-                        .format(ticket_id, create_date, email, text))
+                        'VALUES (%s, %s, %s, %s);'
+                        , (ticket_id, create_date, email, text))
             return True
         except IOError:
             logger.exception('Error adding comment {0}'.format(text))
+        finally:
+            if conn:
+                conn.close()
     else:
         raise ValueError('Invalid email address')
     return False
@@ -120,12 +131,15 @@ def get_ticket(ticket_id=int):
         return cache.get(ticket_id)
     else:
         try:
-            cur.execute('SELECT * FROM tickets WHERE ticket_id={0};'.format(ticket_id))
+            cur.execute('SELECT * FROM tickets WHERE ticket_id=(%s);', (ticket_id))
             if cur.fetchone():
                 cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
                 return cur.fetchone()
         except IOError:
             logger.exception('Error getting ticket {0}'.format(ticket_id))
+        finally:
+            if conn:
+                conn.close()
     return None
 
 
