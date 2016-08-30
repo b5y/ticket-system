@@ -26,6 +26,10 @@ class TestTicketSystem(unittest.TestCase):
         assert new_state is True
 
     def test_add_comment(self):
+        create_ticket(subject='functionality',
+                      text='add new functionality',
+                      email='example@example.ru',
+                      state='In Progress')
         new_comment = add_comment(ticket_id=1,
                                   email='comment@example.ru',
                                   text='new comment')
