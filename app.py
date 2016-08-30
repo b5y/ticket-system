@@ -57,10 +57,10 @@ def create_ticket(subject=basestring, text=basestring,
                    text,
                    email,
                    state))
-            ticket_id = cur.fetchone()[0]
+            ticket_id = cur.fetchone()
             # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
-            if ticket_id:
-                cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
+            if ticket_id and ticket_id[0]:
+                cache.set(str(ticket_id[0]), cur.fetchone())
             return True
         except IOError as io_e:
             logger.exception('Error creating new data with email address {0}'
@@ -81,7 +81,7 @@ def change_state(ticket_id=int, new_state=basestring):
     try:
         cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
         if cur.fetchone():
-            cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
+            cache.set(str(ticket_id), cur.fetchone())
         return True
     except IOError:
         logger.exception('Error changing state')
