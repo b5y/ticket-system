@@ -58,6 +58,7 @@ def create_ticket(subject=basestring, text=basestring,
                    email,
                    state))
             ticket_id = cur.fetchone()[0]
+            # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
             if ticket_id:
                 cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
             return True
