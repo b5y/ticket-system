@@ -10,6 +10,7 @@ pip install -e .
 psql -c 'create database ticket_system;' -U postgres
 export PGPASSWORD="postgres"
 psql -f schema.sql -U postgres -d ticket_system
+py.test test_ticket_system.py
 
 # Run server with application:
 # From docs: http://uwsgi-docs.readthedocs.io/en/latest/WSGIquickstart.html#deploying-flask
