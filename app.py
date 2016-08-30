@@ -57,10 +57,10 @@ def create_ticket(subject=basestring, text=basestring,
                    text,
                    email,
                    state))
-            ticket_id = cur.fetchone()
+            cur_row = cur.fetchone()
             # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
-            if ticket_id and ticket_id[0]:
-                cache.set(str(ticket_id[0]), cur.fetchone())
+            if cur_row and cur_row[0]:
+                cache.set(str(cur_row[0]), cur_row)
             return True
         except IOError as io_e:
             logger.exception('Error creating new data with email address {0}'
