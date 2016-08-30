@@ -57,10 +57,13 @@ def create_ticket(subject=basestring, text=basestring,
                    text,
                    email,
                    state))
-            cur_row = cur.fetchone()
             # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
-            if cur_row and cur_row[0]:
-                cache.set(str(cur_row[0]), cur_row)
+            try:
+                cur_row = cur.fetchone()
+                if cur_row and cur_row[0]:
+                    cache.set(str(cur_row[0]), cur_row)
+            except psycopg2.ProgrammingError as p_e:
+                logger.exception('Can not get created ticket and save it in cache', p_e)
             return True
         except IOError as io_e:
             logger.exception('Error creating new data with email address {0}'
@@ -80,8 +83,12 @@ def change_state(ticket_id=int, new_state=basestring):
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
-        if cur.fetchone():
-            cache.set(str(ticket_id), cur.fetchone())
+        try:
+            cur_row = cur.fetchone()
+            if cur_row and cur_row[0]:
+                cache.set(str(ticket_id), cur_row)
+        except psycopg2.ProgrammingError as p_e:
+            logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
         return True
     except IOError:
         logger.exception('Error changing state')
@@ -120,14 +127,18 @@ def get_ticket(ticket_id=int):
         return None
     cur = conn.cursor()
     if cache.get(str(ticket_id)):
-        return int(cache.get(str(ticket_id)))
+        return cache.get(str(ticket_id))
     else:
         try:
             cur.execute('SELECT create_date, change_date, subject, text, email, state FROM tickets WHERE id=%s;',
-                        ticket_id)
-            if cur.fetchone():
-                cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
-                return cur.fetchone()
+                        [ticket_id])
+            try:
+                cur_row = cur.fetchone()
+                if cur_row and cur_row[0]:
+                    cache.set(str(ticket_id), cur_row)
+                return cur_row
+            except psycopg2.ProgrammingError as p_e:
+                logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
         except IOError:
             logger.exception('Error getting ticket {0}'.format(ticket_id))
         finally:
@@ -136,7 +147,11 @@ def get_ticket(ticket_id=int):
     return None
 
 
-# Better implementation with pool connections
+if __name__ == '__main__':
+    app.run()
+
+
+# Better approach with pool connections
 # connect_db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, database=DB_NAME,
 #                                                      user='postgres',
 #                                                      password='postgres',
@@ -154,7 +169,3 @@ def get_ticket(ticket_id=int):
 #
 # with get_cursor as cur:
 #     cur.execute('...')
-
-
-if __name__ == '__main__':
-    app.run()
