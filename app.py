@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# from __future__ import with_statement
+
 import re
 import psycopg2
 import logging
 import datetime
 import pylibmc
 from flask import Flask
+
+# from contextlib import contextmanager
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -55,7 +59,7 @@ def create_ticket(subject=basestring, text=basestring,
                    state))
             ticket_id = cur.fetchone()[0]
             if ticket_id:
-                cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
+                cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
             return True
         except IOError as io_e:
             logger.exception('Error creating new data with email address {0}'
@@ -74,9 +78,9 @@ def change_state(ticket_id=int, new_state=basestring):
     cur = conn.cursor()
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        cur.execute("UPDATE tickets SET state=(%s), change_date=(%s) WHERE id=(%s);", (new_state, date_time, ticket_id))
+        cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
         if cur.fetchone():
-            cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
+            cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
         return True
     except IOError:
         logger.exception('Error changing state')
@@ -114,13 +118,14 @@ def get_ticket(ticket_id=int):
     if not conn:
         return None
     cur = conn.cursor()
-    if cache.get(ticket_id):
-        return cache.get(ticket_id)
+    if cache.get(str(ticket_id)):
+        return int(cache.get(str(ticket_id)))
     else:
         try:
-            cur.execute('SELECT * FROM tickets WHERE id=(%s);', ticket_id)
+            cur.execute('SELECT create_date, change_date, subject, text, email, state FROM tickets WHERE id=%s;',
+                        ticket_id)
             if cur.fetchone():
-                cache.set(ticket_id, cur.fetchone(), timeout=5 * 30)
+                cache.set(str(ticket_id), cur.fetchone(), timeout=5 * 30)
                 return cur.fetchone()
         except IOError:
             logger.exception('Error getting ticket {0}'.format(ticket_id))
@@ -128,6 +133,26 @@ def get_ticket(ticket_id=int):
             if conn:
                 conn.close()
     return None
+
+
+# Better implementation with pool connections
+# connect_db_pool = psycopg2.pool.SimpleConnectionPool(1, 10, database=DB_NAME,
+#                                                      user='postgres',
+#                                                      password='postgres',
+#                                                      host='localhost')
+#
+# @contextmanager
+# def get_cursor():
+#     conn = connect_db_pool()
+#     try:
+#         yield conn.cursor()
+#     finally:
+#         conn.putconn(conn)
+#
+# # Usage
+#
+# with get_cursor as cur:
+#     cur.execute('...')
 
 
 if __name__ == '__main__':
