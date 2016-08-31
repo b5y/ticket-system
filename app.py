@@ -36,20 +36,23 @@ def verify_email_address(email=basestring):
     return True if re.search(pattern, email) else False
 
 
-def ticket_exists(cur, ticket_id=int):
-    cur.execute("select exists(select 1 from tickets where id=%s)", [ticket_id])
-    cur_row = cur.fetchone()
-    return True if cur_row and cur_row[0] else False
-
-
 def state_variations(state=basestring):
     low_state = state.lower()
     if low_state == 'open':
         return 'answered', 'closed'
     elif low_state == 'answered':
-        return 'waiting for response', 'closed'
+        return 'waiting', 'closed'
     elif low_state == 'closed':
         return ''
+
+
+def can_change_ticket(cur, ticket_id=int, state=None):
+    cur.execute("SELECT state FROM tickets WHERE id=%s", [ticket_id])
+    cur_row = cur.fetchone()
+    if state:
+        if cur_row and isinstance(cur_row[0], basestring):
+            return True if state in state_variations(state) else False
+    return True if cur_row and cur_row[0] else False
 
 
 @app.route('/ticket/create', methods=['POST'])
@@ -84,6 +87,8 @@ def create_ticket(subject=basestring, text=basestring,
         finally:
             if conn:
                 conn.close()
+    else:
+        logger.exception('Can not add ticket. Email {0} or/and state {1} is/are incorrect'.format(email, state))
     return False
 
 
@@ -95,7 +100,7 @@ def change_state(ticket_id=int, new_state=basestring):
     cur = conn.cursor()
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        if ticket_exists(cur, ticket_id=ticket_id):
+        if can_change_ticket(cur, ticket_id=ticket_id, state=new_state):
             cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
         else:
             return False
@@ -123,7 +128,7 @@ def add_comment(ticket_id=int, email=basestring, text=basestring):
     create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if verify_email_address(email):
         try:
-            if ticket_exists(cur, ticket_id=ticket_id):
+            if can_change_ticket(cur, ticket_id=ticket_id):
                 cur.execute("INSERT INTO comments(ticket_id, create_date, email, text) VALUES (%s, %s, %s, %s);"
                             , (ticket_id, create_date, email, text))
                 return True
@@ -135,7 +140,7 @@ def add_comment(ticket_id=int, email=basestring, text=basestring):
             if conn:
                 conn.close()
     else:
-        raise ValueError('Invalid email address')
+        logger.exception('Can not add ticket. Email {0} is incorrect'.format(email))
     return False
 
 
