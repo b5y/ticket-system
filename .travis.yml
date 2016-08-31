@@ -1,6 +1,8 @@
 language: python
-os:
-  - linux
+sudo: required
+dist: trusty
+#os:
+#  - linux
 python:
   - "2.7.12"
 addons:
@@ -13,14 +15,14 @@ before_install:
   - psql -c 'create database ticket_system;' -U postgres
   - export PGPASSWORD="postgres"
   - psql -f schema.sql -U postgres -d ticket_system
-  - sudo add-apt-repository ppa:uwsgi/release -y
-  - sudo apt-get remove -qq libzmq3
+#  - sudo add-apt-repository ppa:uwsgi/release -y
+#   - sudo apt-get remove -qq libzmq3
   - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
-  - sudo apt-get install uwsgi -y
-  - sudo mkdir -p /var/log/uwsgi
-  - sudo mkdir -p /etc/uwsgi/apps-available
-  - sudo mkdir -p /etc/uwsgi/apps-enabled
+#   - sudo apt-get install uwsgi -y
+#  - sudo mkdir -p /var/log/uwsgi
+#  - sudo mkdir -p /etc/uwsgi/apps-available
+#  - sudo mkdir -p /etc/uwsgi/apps-enabled
   - sudo apt-get install memcached
   - sudo apt-get install libmemcached-dev
 install:
@@ -28,15 +30,28 @@ install:
   - pip install -r requirements.txt
   - pip install -e .
 before_script:
-  # - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
+  # Tutorial: https://github.com/mking/flask-uwsgi
+  - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --master
+  - curl http://ubuntu.local:8080
+#  - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
-  - sudo cp uwsgi.conf /etc/init/uwsgi.conf
-  - sudo cp flaskapp.ini /etc/uwsgi/apps-available/flaskapp.ini
-  - sudo ln -s /etc/uwsgi/apps-available/flaskapp.ini /etc/uwsgi/apps-enabled/flaskapp.ini
-  - sudo service uwsgi restart
+  # Create a directory for the UNIX sockets
+  - sudo mkdir /var/run/flask-uwsgi
+  - sudo chown www-data:www-data /var/run/flask-uwsgi
+  # Create a directory for the logs
+  - sudo mkdir /var/log/flask-uwsgi
+  - sudo chown www-data:www-data /var/log/flask-uwsgi
+  # Create a directory for the configs
+  - sudo mkdir /etc/flask-uwsgi
+  - sudo cp flask-uwsgi.conf /etc/init/flask-uwsgi.conf
+  - sudo cp flask-uwsgi.ini /etc/flask-uwsgi/flask-uwsgi.ini
+  - sudo service flask-uwsgi start
+  - sudo less /var/log/flask-uwsgi/flask-uwsgi.log
+#  - sudo ln -s /etc/uwsgi/apps-available/flask-uwsgi.ini /etc/uwsgi/apps-enabled/flask-uwsgi.ini
+#  - sudo service uwsgi restart
 script:
   - py.test test_ticket_system.py
-  # - curl -s http://127.0.0.1/
+  # - curl -s http://127.0.0.1:8080
 after_script:
   - sudo service uwsgi stop
 
