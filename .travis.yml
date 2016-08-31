@@ -15,7 +15,7 @@ before_install:
   - psql -f schema.sql -U postgres -d ticket_system
   - sudo add-apt-repository ppa:uwsgi/release -y
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
-  - sudo rm /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
+  # - sudo rm /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
   - sudo apt-get install --reinstall libzmq3
   - sudo apt-get install uwsgi
   - sudo mkdir -p /var/log/uwsgi
