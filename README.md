@@ -8,19 +8,19 @@ Description:
 -----------
 
 
-##### This thicket system consists of:
+### This thicket system consists of:
 
  - tickets, which may contain comments
  - ticket can be created with state 'open', can change to 'answered' or 'closed' from 'waiting' or 'closed', 
  state 'closed' is final (can not be modified or add comments)
 
-##### API:
+### API:
  - create ticket
  - change state
  - add comment
  - get ticket
  
-##### Using technologies:
+### Using technologies:
  - Flask
  - psycopg2 (without ORM models)
  - uWSGI (emperor mode)
