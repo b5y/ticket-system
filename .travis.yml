@@ -20,9 +20,6 @@ before_install:
   - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
   - sudo apt-get install uwsgi -y
-#  - sudo mkdir -p /var/log/uwsgi
-#  - sudo mkdir -p /etc/uwsgi/apps-available
-#  - sudo mkdir -p /etc/uwsgi/apps-enabled
   - sudo apt-get install memcached
   - sudo apt-get install libmemcached-dev
 install:
@@ -32,7 +29,6 @@ install:
 before_script:
   # Tutorial: https://github.com/mking/flask-uwsgi
   - (sleep 5; echo uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --master) &
-#  - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   # Create a directory for the UNIX sockets
   - sudo mkdir /var/run/flask-uwsgi
@@ -44,15 +40,10 @@ before_script:
   - sudo mkdir /etc/flask-uwsgi
   - sudo cp flask-uwsgi.conf /etc/init/flask-uwsgi.conf
   - sudo cp flask-uwsgi.ini /etc/flask-uwsgi/flask-uwsgi.ini
-#  - sudo service flask-uwsgi start
   - sudo service uwsgi start
-#  - sudo less /var/log/flask-uwsgi/flask-uwsgi.log
 script:
   - py.test test_ticket_system.py
-#  - curl -s http://127.0.0.1:8080
-#  - curl -s http://flask-uwsgi.ubuntu.local
 after_script:
-#  - sudo service flask-uwsgi stop
   - sudo service uwsgi stop
 
 notifications:
