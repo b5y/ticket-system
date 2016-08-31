@@ -31,8 +31,8 @@ install:
   - pip install -e .
 before_script:
   # Tutorial: https://github.com/mking/flask-uwsgi
-  # - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --master
-  # - curl http://ubuntu.local:8080
+  - (sleep 10; echo uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --master) &
+  - curl http://ubuntu.local:8080
 #  - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   # Create a directory for the UNIX sockets
