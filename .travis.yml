@@ -16,7 +16,6 @@ before_install:
   - sudo add-apt-repository ppa:uwsgi/release -y
   - sudo apt-get remove -qq libzmq3
   - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
-  # - sudo apt-get update -qq
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
   - sudo apt-get install uwsgi -y
   - sudo mkdir -p /var/log/uwsgi
@@ -29,6 +28,7 @@ install:
   - pip install -r requirements.txt
   - pip install -e .
 before_script:
+  # - uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --processes 4 --threads 2 --stats 127.0.0.1:9191
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   - sudo cp uwsgi.conf /etc/init/uwsgi.conf
   - sudo cp flaskapp.ini /etc/uwsgi/apps-available/flaskapp.ini
