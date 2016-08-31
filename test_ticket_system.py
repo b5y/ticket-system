@@ -17,14 +17,19 @@ class TestTicketSystem(unittest.TestCase):
         new_ticket = create_ticket(subject='functionality',
                                    text='add new functionality',
                                    email='example@example.ru',
-                                   state='In Progress')
-        incorrect_new_ticket = create_ticket(subject='feature',
-                                             text='add new feature',
-                                             email='@@@#@example.com',
-                                             state='In Progress')
+                                   state='Open')
+        incorrect_email_ticket = create_ticket(subject='feature',
+                                               text='add new feature',
+                                               email='@@@#@example.com',
+                                               state='Open')
+        incorrect_state_ticket = create_ticket(subject='feature',
+                                               text='add new feature',
+                                               email='example@example.ru',
+                                               state='In Progress')
 
         assert new_ticket is True
-        assert incorrect_new_ticket is False
+        assert incorrect_email_ticket is False
+        assert incorrect_state_ticket is False
 
     def test_change_state(self):
         new_state = change_state(ticket_id=1, new_state='Done')
