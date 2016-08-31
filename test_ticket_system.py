@@ -32,7 +32,7 @@ class TestTicketSystem(unittest.TestCase):
         assert incorrect_state_ticket is False
 
     def test_change_state(self):
-        new_state = change_state(ticket_id=1, new_state='Done')
+        new_state = change_state(ticket_id=1, new_state='Answered')
         incorrect_new_state = change_state(ticket_id=100, new_state='Done')
         assert new_state is True
         assert incorrect_new_state is False
@@ -45,11 +45,16 @@ class TestTicketSystem(unittest.TestCase):
         new_comment = add_comment(ticket_id=1,
                                   email='comment@example.ru',
                                   text='new comment')
+        assert new_comment is True
         incorrect_new_comment = add_comment(ticket_id=100,
                                             email='comment@example.com',
                                             text='new comment')
-        assert new_comment is True
         assert incorrect_new_comment is False
+        change_state(ticket_id=1, new_state='Closed')
+        add_comment_to_closed_ticket = add_comment(ticket_id=1,
+                                                   email='comment@example.com',
+                                                   text='new comment')
+        assert add_comment_to_closed_ticket is False
 
     def test_get_ticket(self):
         get_ticket_ = get_ticket(ticket_id=1)
