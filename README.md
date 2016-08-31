@@ -8,7 +8,7 @@ Description:
 -----------
 
 
-### This thicket system consists of:
+### This ticket system consists of:
 
  - tickets, which may contain comments
  - ticket can be created with state 'open', can change to 'answered' or 'closed' from 'waiting' or 'closed', 

@@ -52,8 +52,8 @@ def can_change_ticket(cur, ticket_id=int, state=None):
     if cur_row and isinstance(cur_row[0], basestring):
         if state:
             return True if state.lower() in state_variations(cur_row[0]) else False
-        elif state_variations(cur_row[0]) == '':
-            return False
+        elif len(state_variations(cur_row[0])) > 0:
+            return True
     return False
 
 
