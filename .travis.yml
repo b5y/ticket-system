@@ -45,9 +45,8 @@ before_script:
   - sudo cp flask-uwsgi.conf /etc/init/flask-uwsgi.conf
   - sudo cp flask-uwsgi.ini /etc/flask-uwsgi/flask-uwsgi.ini
 #  - sudo service flask-uwsgi start
-  - sudo less /var/log/flask-uwsgi/flask-uwsgi.log
-#  - sudo ln -s /etc/uwsgi/apps-available/flask-uwsgi.ini /etc/uwsgi/apps-enabled/flask-uwsgi.ini
   - sudo service uwsgi start
+  - sudo less /var/log/flask-uwsgi/flask-uwsgi.log
 script:
   - py.test test_ticket_system.py
   # - curl -s http://127.0.0.1:8080
