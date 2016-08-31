@@ -49,8 +49,8 @@ before_script:
 #  - sudo less /var/log/flask-uwsgi/flask-uwsgi.log
 script:
   - py.test test_ticket_system.py
-  # - curl -s http://127.0.0.1:8080
-  - curl -s http://flask-uwsgi.ubuntu.local
+#  - curl -s http://127.0.0.1:8080
+#  - curl -s http://flask-uwsgi.ubuntu.local
 after_script:
 #  - sudo service flask-uwsgi stop
   - sudo service uwsgi stop
