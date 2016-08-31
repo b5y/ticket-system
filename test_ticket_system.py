@@ -41,7 +41,7 @@ class TestTicketSystem(unittest.TestCase):
         create_ticket(subject='functionality',
                       text='add new functionality',
                       email='example@example.ru',
-                      state='In Progress')
+                      state='Open')
         new_comment = add_comment(ticket_id=1,
                                   email='comment@example.ru',
                                   text='new comment')
