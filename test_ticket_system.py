@@ -1,11 +1,12 @@
 import unittest
-from app import connect_db, verify_email_address, create_ticket, \
+from app import get_cursor, verify_email_address, create_ticket, \
     change_state, add_comment, get_ticket
 
 
 class TestTicketSystem(unittest.TestCase):
-    def test_connect_db(self):
-        self.assertIsNot(connect_db(), None)
+    def test_get_cursor(self):
+        with get_cursor() as cur:
+            self.assertIsNot(cur, None)
 
     def test_verify_email_address(self):
         self.assertTrue(verify_email_address('example@example.com'))
