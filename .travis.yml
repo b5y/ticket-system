@@ -31,11 +31,12 @@ install:
 before_script:
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   - sudo cp uwsgi.conf /etc/init/uwsgi.conf
-  - sudo service uwsgi start
   - sudo cp flaskapp.ini /etc/uwsgi/apps-available/flaskapp.ini
   - sudo ln -s /etc/uwsgi/apps-available/flaskapp.ini /etc/uwsgi/apps-enabled/flaskapp.ini
+  - sudo service uwsgi restart
 script:
   - py.test test_ticket_system.py
+  # - curl -s http://127.0.0.1/
 after_script:
   - sudo service uwsgi stop
 
