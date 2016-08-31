@@ -9,15 +9,11 @@ env:
   - FLASK=0.11.1
   - FLASK=0.10.1
   - FLASK=0.9
-install:
-  - pip install Flask==$FLASK
-  - pip install -r requirements.txt
-  - pip install -e .
-before_script:
+before_install:
   - psql -c 'create database ticket_system;' -U postgres
   - export PGPASSWORD="postgres"
   - psql -f schema.sql -U postgres -d ticket_system
-  - sudo add-apt-repository ppa:uwsgi/release
+  - sudo add-apt-repository ppa:uwsgi/release -y
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
   - sudo apt-get install uwsgi
   - sudo mkdir -p /var/log/uwsgi
@@ -25,6 +21,11 @@ before_script:
   - sudo mkdir -p /etc/uwsgi/apps-enabled
   - sudo apt-get install memcached
   - sudo apt-get install libmemcached-dev
+install:
+  - pip install Flask==$FLASK
+  - pip install -r requirements.txt
+  - pip install -e .
+before_script:
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   - sudo cp uwsgi.conf /etc/init/uwsgi.conf
   - sudo service uwsgi start
