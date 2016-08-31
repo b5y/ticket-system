@@ -32,8 +32,8 @@ class TestTicketSystem(unittest.TestCase):
         assert incorrect_state_ticket is False
 
     def test_change_state(self):
-        new_state = change_state(ticket_id=1, new_state='Answered')
-        incorrect_new_state = change_state(ticket_id=100, new_state='Done')
+        new_state = change_state(ticket_id=1, new_state='answered')
+        incorrect_new_state = change_state(ticket_id=100, new_state='Open')
         assert new_state is True
         assert incorrect_new_state is False
 

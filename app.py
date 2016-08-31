@@ -49,10 +49,12 @@ def state_variations(state=basestring):
 def can_change_ticket(cur, ticket_id=int, state=None):
     cur.execute("SELECT state FROM tickets WHERE id=%s", [ticket_id])
     cur_row = cur.fetchone()
-    if state:
-        if cur_row and isinstance(cur_row[0], basestring):
-            return True if state in state_variations(state) else False
-    return True if cur_row and cur_row[0] else False
+    if cur_row and isinstance(cur_row[0], basestring):
+        if state:
+            return True if state.lower() in state_variations(cur_row[0]) else False
+        elif state_variations(cur_row[0]) == '':
+            return False
+    return False
 
 
 @app.route('/ticket/create', methods=['POST'])
@@ -66,14 +68,13 @@ def create_ticket(subject=basestring, text=basestring,
         cur = conn.cursor()
         try:
             cur.execute(
-                "INSERT INTO tickets(create_date, change_date, subject, text, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;"
+                "INSERT INTO tickets(create_date, change_date, subject, _text_, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;"
                 , (date_time,
                    date_time,
                    subject,
                    text,
                    email,
                    state.lower()))
-            # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
@@ -129,7 +130,7 @@ def add_comment(ticket_id=int, email=basestring, text=basestring):
     if verify_email_address(email):
         try:
             if can_change_ticket(cur, ticket_id=ticket_id):
-                cur.execute("INSERT INTO comments(ticket_id, create_date, email, text) VALUES (%s, %s, %s, %s);"
+                cur.execute("INSERT INTO comments(ticket_id, create_date, email, _text_) VALUES (%s, %s, %s, %s);"
                             , (ticket_id, create_date, email, text))
                 return True
             else:
@@ -154,7 +155,7 @@ def get_ticket(ticket_id=int):
         return cache.get(str(ticket_id))
     else:
         try:
-            cur.execute('SELECT create_date, change_date, subject, text, email, state FROM tickets WHERE id=%s;',
+            cur.execute('SELECT create_date, change_date, subject, _text_, email, state FROM tickets WHERE id=%s;',
                         [ticket_id])
             try:
                 cur_row = cur.fetchone()
