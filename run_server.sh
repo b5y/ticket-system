@@ -11,6 +11,7 @@ pip install -e .
 psql -c 'create database ticket_system;' -U postgres
 export PGPASSWORD="postgres"
 psql -f schema.sql -U postgres -d ticket_system
+sudo apt-get update && sudo apt-get -y upgrade
 sudo apt-get install memcached
 sudo apt-get install libmemcached-dev
 memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
