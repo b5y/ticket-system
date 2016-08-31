@@ -14,10 +14,11 @@ before_install:
   - export PGPASSWORD="postgres"
   - psql -f schema.sql -U postgres -d ticket_system
   - sudo add-apt-repository ppa:uwsgi/release -y
+  - sudo apt-get remove -qq libzmq3
+  - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
+  # - sudo apt-get update -qq
   - sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" install couchdb
-  # - sudo rm /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
-  - sudo apt-get install --reinstall libzmq3
-  - sudo apt-get install uwsgi
+  - sudo apt-get install uwsgi -y
   - sudo mkdir -p /var/log/uwsgi
   - sudo mkdir -p /etc/uwsgi/apps-available
   - sudo mkdir -p /etc/uwsgi/apps-enabled
