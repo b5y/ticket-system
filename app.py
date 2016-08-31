@@ -42,10 +42,20 @@ def ticket_exists(cur, ticket_id=int):
     return True if cur_row and cur_row[0] else False
 
 
+def state_variations(state=basestring):
+    low_state = state.lower()
+    if low_state == 'open':
+        return 'answered', 'closed'
+    elif low_state == 'answered':
+        return 'waiting for response', 'closed'
+    elif low_state == 'closed':
+        return ''
+
+
 @app.route('/ticket/create', methods=['POST'])
 def create_ticket(subject=basestring, text=basestring,
                   email=basestring, state=basestring):
-    if verify_email_address(email):
+    if verify_email_address(email) and state.lower() == 'open':
         conn = connect_db()
         date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if not conn:
@@ -59,7 +69,7 @@ def create_ticket(subject=basestring, text=basestring,
                    subject,
                    text,
                    email,
-                   state))
+                   state.lower()))
             # Bug with fetchone? https://github.com/psycopg/psycopg2/issues/469
             try:
                 cur_row = cur.fetchone()
