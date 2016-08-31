@@ -33,21 +33,24 @@ def connect_db():
 
 def verify_email_address(email=basestring):
     pattern = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
-    if re.search(pattern, email):
-        return True
-    else:
-        raise ValueError('Email address {0} is invalid'.format(email))
+    return True if re.search(pattern, email) else False
+
+
+def ticket_exists(cur, ticket_id=int):
+    cur.execute("select exists(select 1 from tickets where id=%s)", [ticket_id])
+    cur_row = cur.fetchone()
+    return True if cur_row and cur_row[0] else False
 
 
 @app.route('/ticket/create', methods=['POST'])
 def create_ticket(subject=basestring, text=basestring,
                   email=basestring, state=basestring):
-    conn = connect_db()
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if not conn:
-        return False
-    cur = conn.cursor()
     if verify_email_address(email):
+        conn = connect_db()
+        date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if not conn:
+            return False
+        cur = conn.cursor()
         try:
             cur.execute(
                 "INSERT INTO tickets(create_date, change_date, subject, text, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;"
@@ -82,7 +85,10 @@ def change_state(ticket_id=int, new_state=basestring):
     cur = conn.cursor()
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
+        if ticket_exists(cur, ticket_id=ticket_id):
+            cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
+        else:
+            return False
         try:
             cur_row = cur.fetchone()
             if cur_row and cur_row[0]:
@@ -107,9 +113,12 @@ def add_comment(ticket_id=int, email=basestring, text=basestring):
     create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if verify_email_address(email):
         try:
-            cur.execute("INSERT INTO comments(ticket_id, create_date, email, text) VALUES (%s, %s, %s, %s);"
-                        , (ticket_id, create_date, email, text))
-            return True
+            if ticket_exists(cur, ticket_id=ticket_id):
+                cur.execute("INSERT INTO comments(ticket_id, create_date, email, text) VALUES (%s, %s, %s, %s);"
+                            , (ticket_id, create_date, email, text))
+                return True
+            else:
+                return False
         except IOError:
             logger.exception('Error adding comment {0}'.format(text))
         finally:
