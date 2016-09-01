@@ -1,8 +1,6 @@
 language: python
 sudo: required
 dist: trusty
-#os:
-#  - linux
 python:
   - "2.7.12"
 addons:
@@ -27,7 +25,6 @@ install:
   - pip install -r requirements.txt
   - pip install -e .
 before_script:
-  # Tutorial: https://github.com/mking/flask-uwsgi
   - (sleep 5; echo uwsgi --socket 127.0.0.1:3031 --wsgi-file app.py --callable app --master) &
   - memcached -u memcached -d -m 30 -l 127.0.0.1 -p 11211
   # Create a directory for the UNIX sockets
