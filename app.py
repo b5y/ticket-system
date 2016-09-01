@@ -7,15 +7,15 @@ import re
 import psycopg2
 import logging
 import datetime
-import pylibmc
 from flask import Flask
 from contextlib import contextmanager
 from psycopg2.pool import SimpleConnectionPool
+from werkzeug.contrib.cache import MemcachedCache
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
-cache = pylibmc.Client(["127.0.0.1"], binary=True, behaviors={"tcp_nodelay": True, "ketama": True})
+cache = MemcachedCache(['127.0.0.1:11211'])
 app = Flask(__name__)
 connect_db_pool = SimpleConnectionPool(1, 10, database=DB_NAME,
                                        user='postgres',
@@ -76,7 +76,7 @@ def create_ticket(subject=basestring, text=basestring,
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
-                    cache.set(str(cur_row[0]), cur_row)
+                    cache.set(str(cur_row[0]), cur_row, timeout=5 * 30)
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('Can not get created ticket and save it in cache', p_e)
             return True
@@ -96,7 +96,7 @@ def change_state(ticket_id=int, new_state=basestring):
         try:
             cur_row = cur.fetchone()
             if cur_row and cur_row[0]:
-                cache.set(str(ticket_id), cur_row)
+                cache.set(str(ticket_id), cur_row, timeout=5 * 30)
         except psycopg2.ProgrammingError as p_e:
             logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
         return True
@@ -129,7 +129,7 @@ def get_ticket(ticket_id=int):
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
-                    cache.set(str(ticket_id), cur_row)
+                    cache.set(str(ticket_id, cur_row), timeout=5 * 30)
                 return cur_row
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
