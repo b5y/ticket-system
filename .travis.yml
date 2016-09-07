@@ -12,7 +12,7 @@ env:
 before_install:
   - psql -c 'create database ticket_system;' -U postgres
   - export PGPASSWORD="postgres"
-  - psql -f schema.sql -U postgres -d ticket_system
+  - psql -f ./ticket_system/schema.sql -U postgres -d ticket_system
   - sudo add-apt-repository ppa:uwsgi/release -y
   - sudo apt-get remove -qq libzmq3
   - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
