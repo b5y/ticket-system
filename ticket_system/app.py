@@ -1,13 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from __future__ import with_statement
 
+import os
 import re
 import psycopg2
 import logging
 import datetime
-from flask import Flask
+
+from flask import Flask, request
 from contextlib import contextmanager
 from psycopg2.pool import SimpleConnectionPool
 from werkzeug.contrib.cache import MemcachedCache
@@ -17,6 +18,13 @@ logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
 cache = MemcachedCache(['127.0.0.1:11211'])
 app = Flask(__name__)
+app.config.update(dict(
+    DATABASE=os.path.join(app.root_path, 'flaskr.db'),
+    DEBUG=True,
+    SECRET_KEY='development key',
+    USERNAME='admin',
+    PASSWORD='default'
+))
 connect_db_pool = SimpleConnectionPool(1, 10, database=DB_NAME,
                                        user='postgres',
                                        password='postgres',
@@ -59,20 +67,20 @@ def can_change_ticket(cur, ticket_id=int, state=None):
     return False
 
 
-@app.route('/ticket/create', methods=['POST'])
-def create_ticket(subject=basestring, text=basestring,
-                  email=basestring, state=basestring):
-    if verify_email_address(email) and state.lower() == 'open':
+@app.route('/ticket', methods=['POST'])
+def create_ticket():
+    data = request.form
+    if verify_email_address(data['email']) and data['state'].lower() == 'open':
         date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with get_cursor() as cur:
             cur.execute(
                 "INSERT INTO tickets(create_date, change_date, subject, _text_, email, state) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;"
                 , (date_time,
                    date_time,
-                   subject,
-                   text,
-                   email,
-                   state.lower()))
+                   data.get('subject'),
+                   data.get('text'),
+                   data.get('email'),
+                   data.get('state').lower()))
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
@@ -81,16 +89,20 @@ def create_ticket(subject=basestring, text=basestring,
                 logger.exception('Can not get created ticket and save it in cache', p_e)
             return True
     else:
-        logger.exception('Can not add ticket. Email {0} or/and state {1} is/are incorrect'.format(email, state))
+        logger.exception('Can not add ticket. Email {0} or/and state {1} is/are incorrect'.format(data.get('email'),
+                                                                                                  data.get('state')))
     return False
 
 
-@app.route('/ticket/<int:ticket_id>', methods=['PUT'])
-def change_state(ticket_id=int, new_state=basestring):
+@app.route('/ticket', methods=['PUT'])
+def change_state():
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = request.values
+    ticket_id = data.get('id')
     with get_cursor() as cur:
-        if can_change_ticket(cur, ticket_id=ticket_id, state=new_state):
-            cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;", (new_state, date_time, ticket_id))
+        if can_change_ticket(cur, ticket_id=ticket_id, state=data.get('state')):
+            cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;",
+                        (data.get('state'), date_time, ticket_id))
         else:
             return False
         try:
@@ -102,24 +114,26 @@ def change_state(ticket_id=int, new_state=basestring):
         return True
 
 
-@app.route('/comment/add', methods=['POST'])
-def add_comment(ticket_id=int, email=basestring, text=basestring):
+@app.route('/comment', methods=['POST'])
+def add_comment():
     create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if verify_email_address(email):
+    data = request.form
+    if verify_email_address(data.get('email')):
         with get_cursor() as cur:
-            if can_change_ticket(cur, ticket_id=ticket_id):
+            if can_change_ticket(cur, ticket_id=data.get('id')):
                 cur.execute("INSERT INTO comments(ticket_id, create_date, email, _text_) VALUES (%s, %s, %s, %s);"
-                            , (ticket_id, create_date, email, text))
+                            , (data.get('id'), create_date, data.get('email'), data.get('email')))
                 return True
             else:
                 return False
     else:
-        logger.exception('Can not add ticket. Email {0} is incorrect'.format(email))
+        logger.exception('Can not add ticket. Email {0} is incorrect'.format(data.get('email')))
     return False
 
 
-@app.route('/ticket/<int:ticket_id>', methods=['GET'])
-def get_ticket(ticket_id=int):
+@app.route('/ticket', methods=['GET'])
+def get_ticket():
+    ticket_id = request.args.get('id')
     if cache.get(str(ticket_id)):
         return cache.get(str(ticket_id))
     else:
