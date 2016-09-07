@@ -39,7 +39,7 @@ before_script:
   - sudo cp flask-uwsgi.ini /etc/flask-uwsgi/flask-uwsgi.ini
   - sudo service uwsgi start
 script:
-  - py.test test_ticket_system.py
+  - py.test tests
 after_script:
   - sudo service uwsgi stop
 
