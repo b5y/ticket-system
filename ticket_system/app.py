@@ -17,20 +17,21 @@ logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
 cache = MemcachedCache(['127.0.0.1:11211'])
 app = Flask(__name__)
-connect_db_pool = SimpleConnectionPool(1, 10, database=DB_NAME,
+connect_db_pool = SimpleConnectionPool(minconn=1, maxconn=10,
+                                       database=DB_NAME,
                                        user='postgres',
                                        password='postgres',
                                        host='localhost')
 
 
 @contextmanager
-def get_cursor():
-    conn = connect_db_pool.getconn()
+def get_cursor(db=connect_db_pool):
+    conn = db.getconn()
     try:
         yield conn.cursor()
         conn.commit()
     finally:
-        connect_db_pool.putconn(conn)
+        db.putconn(conn)
 
 
 def verify_email_address(email=basestring):

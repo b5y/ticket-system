@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import with_statement
-
 import unittest
 import tempfile
 import ticket_system
@@ -13,19 +9,31 @@ from ticket_system.app import (connect_db_pool,
 
 
 class TestTicketSystem(unittest.TestCase):
-    def setUp(self):
-        ticket_system.app.config['TESTING'] = True
-        self.app = ticket_system.app.test_client()
-        self.assertIsNotNone(connect_db_pool)
+    # def setUp(self):
+    #     ticket_system.app.config['TESTING'] = True
+    #     self.app = ticket_system.app.test_client()
+    #     self.assertIsNotNone(connect_db_pool)
 
     def test_get_cursor(self):
         with get_cursor() as cur:
             self.assertIsNot(cur, None)
 
+    def test_empty_db(self):
+        # rv = self.app.get('/')
+        # assert b'No entries here so far' in rv.data
+        pass
+
     def test_verify_email_address(self):
         self.assertTrue(verify_email_address('example@example.com'))
 
     def test_create_ticket(self):
+        # rv = self.app.post('/ticket', data=dict(
+        #     subject='functionality',
+        #     _text_='add new functionality',
+        #     email='example@example.ru',
+        #     state='Open',
+        # ))
+        # self.assertNotIn('No entries here so far', rv.data)
         pass
 
         # def test_change_state(self):
