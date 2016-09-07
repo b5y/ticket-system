@@ -18,13 +18,6 @@ logger = logging.getLogger(__name__)
 DB_NAME = 'ticket_system'
 cache = MemcachedCache(['127.0.0.1:11211'])
 app = Flask(__name__)
-app.config.update(dict(
-    DATABASE=os.path.join(app.root_path, 'flaskr.db'),
-    DEBUG=True,
-    SECRET_KEY='development key',
-    USERNAME='admin',
-    PASSWORD='default'
-))
 connect_db_pool = SimpleConnectionPool(1, 10, database=DB_NAME,
                                        user='postgres',
                                        password='postgres',
