@@ -60,6 +60,11 @@ def can_change_ticket(cur, ticket_id=int, state=None):
     return False
 
 
+@app.route('/')
+def index():
+    return 'Index page'
+
+
 @app.route('/ticket', methods=['POST'])
 def create_ticket():
     data = request.form
