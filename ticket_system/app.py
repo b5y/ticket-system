@@ -55,8 +55,8 @@ def can_change_ticket(cur, ticket_id=int, state=None):
     if cur_row and isinstance(cur_row[0], basestring):
         if state:
             return True if state.lower() in state_variations(cur_row[0]) else False
-        else:
-            return False
+        elif len(state_variations(cur_row[0])) > 0:
+            return True
     return False
 
 
@@ -102,17 +102,16 @@ def create_ticket():
         return _make_response()
 
 
-@app.route('/ticket/<int:id>', methods=['PUT'])
-def change_state():
+@app.route('/ticket/<int:ticket_id>', methods=['PUT'])
+def change_state(ticket_id=int):
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data = request.values
-    ticket_id = data.get('id')
     with get_cursor() as cur:
         if can_change_ticket(cur, ticket_id=ticket_id, state=data.get('state')):
             cur.execute("UPDATE tickets SET state=%s, change_date=%s WHERE id=%s;",
                         (data.get('state'), date_time, ticket_id))
         else:
-            return False
+            return _make_response()
         try:
             cur_row = cur.fetchone()
             if cur_row and cur_row[0]:
@@ -123,16 +122,15 @@ def change_state():
         return _make_response()
 
 
-@app.route('/comment', methods=['POST'])
-def add_comment():
+@app.route('/ticket/<int:ticket_id>/comment', methods=['POST'])
+def add_comment(ticket_id=int):
     create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data = request.form
-    ticket_id = data.get('ticket_id')
     if verify_email_address(data.get('email')):
         with get_cursor() as cur:
             if can_change_ticket(cur, ticket_id=ticket_id):
                 cur.execute("INSERT INTO comments(ticket_id, create_date, email, _text_) VALUES (%s, %s, %s, %s);"
-                            , (ticket_id, create_date, data.get('email'), data.get('email')))
+                            , (ticket_id, create_date, data.get('email'), data.get('_text_')))
                 return _make_response(ticket_id=ticket_id)
             else:
                 return _make_response()
@@ -141,11 +139,11 @@ def add_comment():
     return _make_response()
 
 
-@app.route('/ticket/<int:id>', methods=['GET'])
-def get_ticket():
-    ticket_id = request.args.get('id')
-    if cache.get(str(ticket_id)):
-        return cache.get(str(ticket_id))
+@app.route('/ticket/<int:ticket_id>', methods=['GET'])
+def get_ticket(ticket_id=int):
+    get_cache = cache.get(str(ticket_id))
+    if get_cache:
+        return _make_response(ticket_id=ticket_id, data=get_cache)
     else:
         with get_cursor() as cur:
             cur.execute('SELECT create_date, change_date, subject, _text_, email, state FROM tickets WHERE id=%s;',
