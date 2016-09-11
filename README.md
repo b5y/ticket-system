@@ -1,4 +1,4 @@
-This is simple ticket-system
+Simple ticket system
 ============================
 
 [![Build Status](https://travis-ci.org/b5y/ticket-system.svg?branch=master)]
@@ -20,7 +20,7 @@ Description:
  - add comment
  - get ticket
  
-### Using technologies:
+### Dependencies:
  - Flask
  - psycopg2 (without ORM models)
  - uWSGI (emperor mode)
