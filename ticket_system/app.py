@@ -102,7 +102,7 @@ def create_ticket():
         return _make_response()
 
 
-@app.route('/ticket', methods=['PUT'])
+@app.route('/ticket/<int:id>', methods=['PUT'])
 def change_state():
     date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data = request.values
@@ -117,6 +117,7 @@ def change_state():
             cur_row = cur.fetchone()
             if cur_row and cur_row[0]:
                 cache.set(str(ticket_id), cur_row, timeout=5 * 30)
+                return _make_response(ticket_id=cur_row[0], data=cur_row)
         except psycopg2.ProgrammingError as p_e:
             logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
         return _make_response()
@@ -153,7 +154,7 @@ def get_ticket():
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
                     cache.set(str(ticket_id, cur_row), timeout=5 * 30)
-                return cur_row
+                return _make_response(ticket_id=cur_row[0], data=cur_row)
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
     return _make_response()

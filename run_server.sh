@@ -10,7 +10,7 @@ pip install -e .
 # Set Database:
 psql -c 'create database ticket_system;' -U postgres
 export PGPASSWORD="postgres"
-psql -f ./ticket_system/schema.sql -U postgres -d ticket_system
+psql -f schema.sql -U postgres -d ticket_system
 # Add uWSGI to PPA:
 sudo add-apt-repository ppa:uwsgi/release
 sudo apt-get update && sudo apt-get -y upgrade

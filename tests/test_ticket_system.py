@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 import ticket_system
 import psycopg2
@@ -16,14 +18,13 @@ class TestTicketSystem(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         with get_cursor() as cur:
-            cur.execute('DROP TABLE IF EXISTS tickets CASCADE;')
-            cur.execute('DROP TABLE IF EXISTS comments CASCADE;')
+            cur.execute(open("schema.sql", "r").read())
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
                     print 'Tables successfully deleted'
                 else:
-                    print 'Can not delete tables'
+                    print 'Can not get access to tables'
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('tearDownClass: There is no data in database', p_e)
 
