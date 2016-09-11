@@ -1,18 +1,31 @@
 import unittest
-import tempfile
 import ticket_system
+import psycopg2
 
-from ticket_system.app import (connect_db_pool,
-                               get_cursor,
+from ticket_system.app import (get_cursor,
                                verify_email_address,
-                               create_ticket)
+                               logger)
 
 
 class TestTicketSystem(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         ticket_system.app.config['TESTING'] = True
-        self.app = ticket_system.app.test_client()
-        self.assertIsNotNone(connect_db_pool)
+        cls.app = ticket_system.app.test_client()
+
+    @classmethod
+    def tearDownClass(cls):
+        with get_cursor() as cur:
+            cur.execute('DROP TABLE IF EXISTS tickets CASCADE;')
+            cur.execute('DROP TABLE IF EXISTS comments CASCADE;')
+            try:
+                cur_row = cur.fetchone()
+                if cur_row and cur_row[0]:
+                    print 'Tables successfully deleted'
+                else:
+                    print 'Can not delete tables'
+            except psycopg2.ProgrammingError as p_e:
+                logger.exception('tearDownClass: There is no data in database', p_e)
 
     def test_get_cursor(self):
         with get_cursor() as cur:
@@ -24,51 +37,27 @@ class TestTicketSystem(unittest.TestCase):
 
     def test_verify_email_address(self):
         self.assertTrue(verify_email_address('example@example.com'))
+        self.assertFalse(verify_email_address('example@.example.com'))
 
-    # def test_create_ticket(self):
-    #     rv = self.app.post('/ticket', data=dict(
-    #         subject='functionality',
-    #         _text_='add new functionality',
-    #         email='example@example.ru',
-    #         state='Open',
-    #     ))
-    #     self.assertNotIn('No entries here so far', rv.data)
-        pass
-
-        # def test_change_state(self):
-        #     create_ticket(subject='functionality',
-        #                   text='add new functionality',
-        #                   email='example@example.ru',
-        #                   state='Open')
-        #     new_state = change_state(ticket_id=2, new_state='answered')
-        #     incorrect_new_state = change_state(ticket_id=100, new_state='Open')
-        #     self.assertTrue(new_state)
-        #     self.assertFalse(incorrect_new_state)
-        #
-        # def test_add_comment(self):
-        #     create_ticket(subject='functionality',
-        #                   text='add new functionality',
-        #                   email='example@example.ru',
-        #                   state='Open')
-        #     new_comment = add_comment(ticket_id=1,
-        #                               email='comment@example.ru',
-        #                               text='new comment')
-        #     self.assertTrue(new_comment)
-        #     incorrect_new_comment = add_comment(ticket_id=100,
-        #                                         email='comment@example.com',
-        #                                         text='new comment')
-        #     self.assertFalse(incorrect_new_comment)
-        #     change_state(ticket_id=1, new_state='Closed')
-        #     add_comment_to_closed_ticket = add_comment(ticket_id=1,
-        #                                                email='comment@example.com',
-        #                                                text='new comment')
-        #     self.assertFalse(add_comment_to_closed_ticket)
-        #
-        # def test_get_ticket(self):
-        #     get_ticket_ = get_ticket(ticket_id=1)
-        #     incorrect_ticket = get_ticket(ticket_id=100)
-        #     self.assertIsNot(get_ticket_, None)
-        #     self.assertIs(incorrect_ticket, None)
+    def test_create_ticket(self):
+        rv = self.app.post('/ticket', data=dict(
+            subject='functionality',
+            _text_='add new functionality',
+            email='example@example.ru',
+            state='open',
+        ))
+        self.assertNotIn(b'No entries here so far', rv.data)
+        self.assertIn('Open', rv.data)
+        self.assertIn('functionality', rv.data)
+        self.assertIn('example@example.ru', rv.data)
+        self.assertIn('add new functionality', rv.data)
+        rv = self.app.post('/ticket', data=dict(
+            subject='performance',
+            _text_='add new feature',
+            email='example@example.ru',
+            state='answered',
+        ))
+        self.assertIn('null', rv.data)
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ import psycopg2
 import logging
 import datetime
 
-from flask import Flask, request
+from flask import Flask, request, jsonify, make_response
 from contextlib import contextmanager
 from psycopg2.pool import SimpleConnectionPool
 from werkzeug.contrib.cache import MemcachedCache
@@ -55,9 +55,19 @@ def can_change_ticket(cur, ticket_id=int, state=None):
     if cur_row and isinstance(cur_row[0], basestring):
         if state:
             return True if state.lower() in state_variations(cur_row[0]) else False
-        elif len(state_variations(cur_row[0])) > 0:
-            return True
+        else:
+            return False
     return False
+
+
+def _make_response(ticket_id=None, data=None):
+    if not data:
+        return make_response(jsonify({'ticket_id': ticket_id}))
+    elif not ticket_id:
+        return make_response(jsonify({'data': data}))
+    elif not data and not ticket_id:
+        return make_response()
+    return make_response(jsonify({'ticket_id': ticket_id, 'data': data}))
 
 
 @app.route('/')
@@ -68,7 +78,7 @@ def index():
 @app.route('/ticket', methods=['POST'])
 def create_ticket():
     data = request.form
-    if verify_email_address(data['email']) and data['state'].lower() == 'open':
+    if verify_email_address(data['email']) and data.get('state').lower() == 'open':
         date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with get_cursor() as cur:
             cur.execute(
@@ -76,20 +86,20 @@ def create_ticket():
                 , (date_time,
                    date_time,
                    data.get('subject'),
-                   data.get('text'),
+                   data.get('_text_'),
                    data.get('email'),
-                   data.get('state').lower()))
+                   data.get('state').title()))
             try:
                 cur_row = cur.fetchone()
                 if cur_row and cur_row[0]:
                     cache.set(str(cur_row[0]), cur_row, timeout=5 * 30)
+                    return _make_response(ticket_id=cur_row[0], data=cur_row)
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('Can not get created ticket and save it in cache', p_e)
-            return True
     else:
         logger.exception('Can not add ticket. Email {0} or/and state {1} is/are incorrect'.format(data.get('email'),
                                                                                                   data.get('state')))
-    return False
+        return _make_response()
 
 
 @app.route('/ticket', methods=['PUT'])
@@ -109,27 +119,28 @@ def change_state():
                 cache.set(str(ticket_id), cur_row, timeout=5 * 30)
         except psycopg2.ProgrammingError as p_e:
             logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
-        return True
+        return _make_response()
 
 
 @app.route('/comment', methods=['POST'])
 def add_comment():
     create_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data = request.form
+    ticket_id = data.get('ticket_id')
     if verify_email_address(data.get('email')):
         with get_cursor() as cur:
-            if can_change_ticket(cur, ticket_id=data.get('id')):
+            if can_change_ticket(cur, ticket_id=ticket_id):
                 cur.execute("INSERT INTO comments(ticket_id, create_date, email, _text_) VALUES (%s, %s, %s, %s);"
-                            , (data.get('id'), create_date, data.get('email'), data.get('email')))
-                return True
+                            , (ticket_id, create_date, data.get('email'), data.get('email')))
+                return _make_response(ticket_id=ticket_id)
             else:
-                return False
+                return _make_response()
     else:
         logger.exception('Can not add ticket. Email {0} is incorrect'.format(data.get('email')))
-    return False
+    return _make_response()
 
 
-@app.route('/ticket', methods=['GET'])
+@app.route('/ticket/<int:id>', methods=['GET'])
 def get_ticket():
     ticket_id = request.args.get('id')
     if cache.get(str(ticket_id)):
@@ -145,7 +156,7 @@ def get_ticket():
                 return cur_row
             except psycopg2.ProgrammingError as p_e:
                 logger.exception('Can not get updated ticket {0} and save it in cache'.format(ticket_id), p_e)
-    return None
+    return _make_response()
 
 
 if __name__ == '__main__':
